@@ -29,18 +29,18 @@ def main(file):
     grad_thin = calc_gradient(time_thin, thrust_thin)
 
     serch_static_point(time_raw, thrust_raw, grad_raw)
-    plot_thrust_curve('example', time_raw, thrust_raw)
-    compare_thrust_curve('example', time_raw, thrust_raw, time_lpf, thrust_lpf)
-    # compare_thrust_curve('example', time_raw, thrust_raw, time_thin, thrust_thin)
-    # compare_thrust_curve('example', time_raw, thrust_raw, time_lpf, thrust_lpf, time_thin, thrust_thin)
-    # plot_thrust_curve('example', time_lpf, thrust_lpf)
-    plot_thrust_curve('example', time_thin, thrust_thin)
-    plot_gradient('example', time_raw, grad_raw)
-    plot_gradient('example', time_lpf, grad_lpf)
-    # plot_gradient('example', time_thin, grad_thin)
-    plot_gradient2('example', time_raw, grad_lpf, time_lpf_p, grad_lpf_p, time_lpf_n, grad_lpf_n)
+    plot_thrust_curve('output', time_raw, thrust_raw)
+    compare_thrust_curve('output', time_raw, thrust_raw, time_lpf, thrust_lpf)
+    # compare_thrust_curve('output', time_raw, thrust_raw, time_thin, thrust_thin)
+    # compare_thrust_curve('output', time_raw, thrust_raw, time_lpf, thrust_lpf, time_thin, thrust_thin)
+    # plot_thrust_curve('output', time_lpf, thrust_lpf)
+    plot_thrust_curve('output', time_thin, thrust_thin)
+    plot_gradient('output', time_raw, grad_raw)
+    plot_gradient('output', time_lpf, grad_lpf)
+    # plot_gradient('output', time_thin, grad_thin)
+    plot_gradient2('output', time_raw, grad_lpf, time_lpf_p, grad_lpf_p, time_lpf_n, grad_lpf_n)
 
 
 if __name__=='__main__':
 
-    main()
+    main('example/thrust.csv')

@@ -45,7 +45,7 @@ def serch_static_point(time, thrust, grad):
         time_sta += time_step
         time_end += time_step
 
-    plot_std('example', time_arr, std_arr)
+    plot_std('output', time_arr, std_arr)
 
     point = np.argmax(time >= time_static)
 
