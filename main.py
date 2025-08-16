@@ -14,7 +14,6 @@ def main(file):
     # Low Pass Filter
     thrust_lpf = butter_lowpass_filter(thrust_raw, 10, 1./ dt)
     time_lpf = time_raw
-    # index_static = serch_static_point(time_raw, thrust_raw, grad_raw)
     grad_lpf = calc_gradient(time_lpf, thrust_lpf)
     
     index_static = serch_static_point(time_raw, thrust_lpf, grad_lpf)
