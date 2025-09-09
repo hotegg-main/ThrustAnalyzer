@@ -2,7 +2,8 @@ import numpy as np
 from scipy import integrate, signal, interpolate
 from scipy.ndimage import gaussian_filter
 
-from grapher import plot_temp as plot
+from grapher import plot_temp2 as plot
+from grapher import plot_temp, plot_compare
 from grapher import plot_log
 
 def calc_total_impulse(time, thrust):
@@ -166,7 +167,6 @@ def thin_out_data(index, x, y, index_sta, index_end):
     ista = 0
 
     time_step_arr = []
-    index_break = len(index) - 1
     
     # 平均処理
     for i in range(len(index) - 1):
@@ -186,21 +186,22 @@ def thin_out_data(index, x, y, index_sta, index_end):
 
     # 平均処理前後で誤差が大きい場合は切り詰める
     error = compare_data(x[index_sta:index_end], y[index_sta:index_end], x_out, y_out)
-    # plot(x[index_sta:index_end], error)
     
-    index_max_in  = np.min([index_sta + np.argmax(error >= 10.), index_end])
+    index_max_in  = np.argmax(error[int(len(error)/4):] >= 10.)
+    index_max_in  += index_sta + int(len(error)/4)
+    index_max_in  = np.min([index_max_in, index_end])
     if index_max_in < int(index_end / 2):
         index_max_in = index_end
-    index_max_out = np.argmax(x_out >= np.min([x_out[-1], x[index_max_in]]))
-    
-    # print('Time Step Ave.', np.mean(time_step_arr) + np.std(time_step_arr))
-    # plot(index[:len(time_step_arr)], time_step_arr, 'Time [sec]', 'Elapse [sec]')
-    
+    index_max_out = np.argmin(x_out < np.min([x_out[-1], x[index_max_in]]))
+
     x_out = np.array(x_out[:index_max_out])
-    y_out = gaussian_filter(np.array(y_out[:index_max_out]), 1.5)
-    # y_out = np.array(y_out[:index_max_out])
+    y_out = np.array(y_out[:index_max_out])
     x_out = np.append(np.append(x[:index_sta], x_out), x[index_max_in:])
     y_out = np.append(np.append(y[:index_sta], y_out), y[index_max_in:])
+    y_out_interp = interpolate.interp1d(x_out, y_out, kind='linear', bounds_error=False, fill_value=(y_out[0], y_out[-1]))
+    x_filter = np.arange(x_out[0], x_out[-1] + 0.05, 0.05)
+    y_filter = gaussian_filter(y_out_interp(x_filter), 1.)
+    y_out = interpolate.interp1d(x_filter, y_filter, kind='linear', bounds_error=False, fill_value=(y_filter[0], y_filter[-1]))(x_out)
 
     return x_out, y_out
 

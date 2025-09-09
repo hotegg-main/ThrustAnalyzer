@@ -39,7 +39,8 @@ def compare_thrust_curve(path, time1, force1, time2, force2, time3, force3):
     plt.figure(figsize=(8, 4))
     plt.plot(time1, force1, color=color[0], label='Raw', linewidth=3)
     plt.plot(time2, force2, color=color[1], label='LPF', linewidth=3)
-    plt.plot(time3, force3, color=color[2], label='LPF+Ave', linestyle='--', linewidth=2)
+    # plt.plot(time3, force3, color=color[2], label='LPF+Ave', linestyle='--', linewidth=3)
+    plt.plot(time3, force3, color=color[2], label='LPF+Ave', marker='o', markersize=4)
     plt.xlim(left=0., right=time2[-1])
     # plt.xlim(left=9., right=10.)
     plt.xlabel('Time [sec]')
@@ -106,9 +107,30 @@ def plot_temp(x, y, xlabel='x', ylabel='y'):
     plt.ylabel(ylabel)
     plt.show()
 
+def plot_temp2(x, y, point1, point2, xlabel='x', ylabel='y'):
+
+    plt.plot(x, y, marker='o')
+    plt.axvline(point1, linestyle='--', color='black')
+    plt.axvline(point2, linestyle='--', color='gold')
+    plt.grid()
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.show()
+
 def plot_log(x, y):
 
     plt.plot(x, y, marker='o')
     plt.yscale('log')
     plt.grid()
+    plt.show()
+
+def plot_compare(x1, y1, x2, y2):
+
+    plt.plot(x1, y1, linewidth=3)
+    plt.plot(x2, y2, linestyle='--')
+    # plt.axvline(point1, linestyle='--', color='black')
+    # plt.axvline(point2, linestyle='--', color='gold')
+    plt.grid()
+    # plt.xlabel(xlabel)
+    # plt.ylabel(ylabel)
     plt.show()
