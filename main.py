@@ -60,6 +60,23 @@ def search_burnout(time, thrust, grad):
 
     return x_cross, tan1_array, tan2_array, nor_array
 
+def make_summay(path, info_thrust):
+
+    text = \
+    [
+        'Burn Start Time [sec]      :', str(round(info_thrust['Act. Start Time'], 3)),'\n',
+        'Actuation Time [sec]       :', str(round(info_thrust['Act Time, Time'], 3)),'\n',
+        'Burnout Time [sec]         :', str(round(info_thrust['Burnout Time, Time'], 3)),'\n',
+        'Total Impulse(Act) [Ns]    :', str(round(info_thrust['Total Impulse(Act)'], 3)),'\n',
+        'Ave. Thrust(Act) [N]       :', str(round(info_thrust['Ave. Thrust(Act)'], 3)),'\n',
+        'Total Impulse(Burn) [Ns]   :', str(round(info_thrust['Total Impulse(Burn)'], 3)),'\n',
+        'Ave. Thrust(Burn) [N]      :', str(round(info_thrust['Ave. Thrust(Burn)'], 3)),'\n',
+    ]
+
+    with open(path + os.sep +'summary.txt', mode='w') as f:
+
+        f.writelines(text)
+
 def main(path_file, path_result):
 
     time_raw, thrust_raw, dt_raw, info_thrust = prepare(path_file, path_result)
@@ -75,6 +92,8 @@ def main(path_file, path_result):
 
     time_burnout, tan1, tan2, nor = search_burnout(time_thin, thrust_thin, grad_thin)
     info_thrust = updata_info_buntout(info_thrust, time_burnout, time_raw, thrust_raw)
+
+    make_summay(path_result, info_thrust)
     
     # Plot
     compare_thrust_curve(path_result, time_raw, thrust_raw, time_lpf, thrust_lpf, time_thin, thrust_thin)

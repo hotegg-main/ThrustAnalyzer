@@ -45,7 +45,8 @@ def updata_info_buntout(info_thrust, time_burn, time, thrust):
     index_sta  = np.argmax(time >= time_sta)
     total_impulse = integrate.simpson(thrust[index_sta:index_burn], time[index_sta:index_burn])
     thrust_ave = total_impulse / (time_burn - time_sta)
-    info_new['Burnout Time, Time']  = time_burn
+    info_new['Burn. End, Time']     = time_burn
+    info_new['Burnout Time, Time']  = time_burn - time_sta
     info_new['Total Impulse(Burn)'] = total_impulse
     info_new['Ave. Thrust(Burn)']   = thrust_ave
 
