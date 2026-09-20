@@ -40,7 +40,8 @@ def apply_thin_out(time, thrust):
     index_thin_sta = index_p[np.argmax(index_p > index_max)]
     time_thin, thrust_thin = thin_out_data(index_peak, time, thrust, index_thin_sta, index_peak[-1])
 
-    return time_thin, thrust_thin
+    # return time_thin, thrust_thin
+    return time_thin, thrust_thin, index_peak
 
 def search_burnout(time, thrust, grad):
     '''
@@ -85,7 +86,7 @@ def main(path_file, path_result):
     time_lpf, thrust_lpf = apply_LPF(time_raw, thrust_raw, dt_raw)
 
     # 2nd STEP: Data Thin Out (Average + Gaussian Filter)
-    time_thin, thrust_thin = apply_thin_out(time_lpf, thrust_lpf)
+    time_thin, thrust_thin, index_peak = apply_thin_out(time_lpf, thrust_lpf)
 
     grad_lpf = calc_gradient(time_lpf, thrust_lpf)
     grad_thin = calc_gradient(time_thin, thrust_thin)
@@ -96,7 +97,7 @@ def main(path_file, path_result):
     make_summay(path_result, info_thrust)
     
     # Plot
-    compare_thrust_curve(path_result, time_raw, thrust_raw, time_lpf, thrust_lpf, time_thin, thrust_thin)
+    compare_thrust_curve(path_result, time_raw, thrust_raw, time_lpf, thrust_lpf, time_thin, thrust_thin, index_peak)
     plot_thrust_curve(path_result, time_raw, thrust_raw, time_thin, thrust_thin, info_thrust, tan1, tan2, nor)
     plot_gradient(path_result, time_thin, grad_thin)
 

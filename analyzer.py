@@ -4,7 +4,7 @@ from scipy.ndimage import gaussian_filter
 from scipy import optimize
 
 from grapher import plot_temp2 as plot
-from grapher import plot_temp, plot_compare, plot_gradient_deb
+from grapher import plot_temp, plot_compare, plot_gradient_deb, plot_compare_2ax, plot_compare_2ax_3series
 from grapher import plot_log
 
 def calc_thrust_info(time, thrust):
@@ -256,6 +256,8 @@ def thin_out_data(index, x, y, index_sta, index_end):
     ista = 0
 
     time_step_arr = []
+
+    # print(x[index_sta], x[index_end])
     
     # 平均処理
     for i in range(len(index) - 1):
@@ -276,11 +278,16 @@ def thin_out_data(index, x, y, index_sta, index_end):
     # 平均処理前後で誤差が大きい場合は切り詰める
     error = compare_data(x[index_sta:index_end], y[index_sta:index_end], x_out, y_out)
     
-    index_max_in  = np.argmax(error[int(len(error)/4):] >= 10.)
+    # index_max_in: 平滑前後の差が10%以上になる時刻　→定常燃焼終了区間を検出
+    index_max_in  = np.argmax(error[int(len(error)/4):] >= 10.) # 前1/4以降の区間で差が10%以上になる時刻
     index_max_in  += index_sta + int(len(error)/4)
     index_max_in  = np.min([index_max_in, index_end])
-    if index_max_in < int(index_end / 2):
-        index_max_in = index_end
+    # if index_max_in < int(index_end / 2):
+        # 平滑前後で差が10%以上になる時刻が、全時刻の前半に存在
+        # print('True', x[index_max_in], x[index_end])
+        # index_max_in = index_end
+        # index_max_in = int(index_end / 2)
+
     index_max_out = np.argmin(x_out < np.min([x_out[-1], x[index_max_in]]))
 
     x_out = np.array(x_out[:index_max_out])
@@ -288,12 +295,18 @@ def thin_out_data(index, x, y, index_sta, index_end):
     x_out = np.append(np.append(x[:index_sta], x_out), x[index_max_in:])
     y_out = np.append(np.append(y[:index_sta], y_out), y[index_max_in:])
     y_out_interp = interpolate.interp1d(x_out, y_out, kind='linear', bounds_error=False, fill_value=(y_out[0], y_out[-1]))
+    # ガウシアンフィルタでダメ押し
     x_filter = np.arange(x_out[0], x_out[-1] + 0.05, 0.05)
     y_filter = gaussian_filter(y_out_interp(x_filter), 1.)
-    y_out = interpolate.interp1d(x_filter, y_filter, kind='linear', bounds_error=False, fill_value=(y_filter[0], y_filter[-1]))(x_out)
+    # y_out = interpolate.interp1d(x_filter, y_filter, kind='linear', bounds_error=False, fill_value=(y_filter[0], y_filter[-1]))(x_out)
+
+    # plot(x, y, x[index_end], x[index_max_in])
+    # plot_compare(x, y, x_out, y_out)
+    # plot_compare_2ax(x, y, x[index_sta:index_end], error)
+    # plot_compare_2ax_3series(x, y, x_out, y_out, x[index_sta:index_end], error)
+    # plot_compare(x, y, x_filter, y_filter)
 
     return x_filter, y_filter
-    # return x_out, y_out
 
 def compare_data(time_src, thrust_src, time_dst, thrust_dst):
     '''
@@ -307,31 +320,3 @@ def compare_data(time_src, thrust_src, time_dst, thrust_dst):
     error *= 100.
 
     return error
-
-# def calc_fft(time, thrust):
-
-#     T = np.mean(time[1:] - time[:-1])
-#     N = len(thrust)
-#     window = np.hanning(N)
-
-#     # FFT実行
-#     fft_result = np.fft.fft(thrust * window)
-#     fft_result = fft_result / (N / 2)
-#     amp = np.abs(fft_result)
-
-#     # 周波数軸の計算
-#     freqs = np.fft.fftfreq(len(thrust), T)
-
-#     # plot(freqs[:N//2], amp[:N//2])
-#     plot_log(freqs[:N//2], amp[:N//2])
-
-# if __name__=='__main__':
-
-#     N = 1024            # サンプル数
-#     dt = 0.0005          # サンプリング周期 [s]
-#     f1, f2 = 100, 350    # 周波数 [Hz]
-
-#     t = np.arange(0, N * dt, dt) # 時間 [s]
-#     x = 1.5 * np.sin(2 * np.pi * f1 * t) + np.sin(2 * np.pi * f2 * t) # データ
-
-#     calc_fft(t, x)
