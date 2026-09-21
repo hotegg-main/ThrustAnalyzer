@@ -170,3 +170,15 @@ def plot_compare_2ax_3series(x1, y1, x2, y2, x3, y3):
     ax2.plot(x3, y3, color='limegreen')
     ax1.grid()
     plt.show()
+
+def plot_compare_2ax_4series(x1, y1, x2, y2, x3, y3, x4, y4):
+
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111)
+    ax2 = ax1.twinx()
+    ax1.plot(x1, y1, color='royalblue')
+    ax1.plot(x2, y2, color='orangered')
+    ax1.scatter(x3, y3, color='black', facecolors='none', s=50, zorder=2)
+    ax2.plot(x4, y4, color='lime')
+    ax1.grid()
+    plt.show()

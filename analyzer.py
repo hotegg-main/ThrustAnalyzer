@@ -4,7 +4,7 @@ from scipy.ndimage import gaussian_filter
 from scipy import optimize
 
 from grapher import plot_temp2 as plot
-from grapher import plot_temp, plot_compare, plot_gradient_deb, plot_compare_2ax, plot_compare_2ax_3series
+from grapher import plot_temp, plot_compare, plot_gradient_deb, plot_compare_2ax, plot_compare_2ax_3series, plot_compare_2ax_4series
 from grapher import plot_log
 
 def calc_thrust_info(time, thrust):
@@ -270,13 +270,15 @@ def thin_out_data(index, x, y, index_sta, index_end):
         if ista > index_sta and iend <= index_end:
             # 間引く対象の範囲内なら、平均処理実施
 
-            x_thin = np.mean(x[ista:iend])
+            # x_thin = np.mean(x[ista:iend])
+            x_thin = x[ista] if y[ista] >= y[iend] else x[iend]
             y_thin = np.mean(y[ista:iend])
             x_out.append(x_thin)
             y_out.append(y_thin)
 
     # 平均処理前後で誤差が大きい場合は切り詰める
     error = compare_data(x[index_sta:index_end], y[index_sta:index_end], x_out, y_out)
+    # plot_compare_2ax_4series(x, y, x_out, y_out, x[index], y[index], x[index_sta:index_end], error)
     
     # index_max_in: 平滑前後の差が10%以上になる時刻　→定常燃焼終了区間を検出
     index_max_in  = np.argmax(error[int(len(error)/4):] >= 10.) # 前1/4以降の区間で差が10%以上になる時刻
