@@ -6,6 +6,17 @@ import scipy
 import os
 
 def prepare(path_file, path_result):
+    '''
+    前処理
+    Args:
+        path_file   :推力履歴のファイルパス
+        path_result :結果出力先のフォルダパス
+    Returns:
+        time_raw    :時間
+        thrust_raw  :推力
+        dt          :時間刻み
+        info_thrust :推力情報
+    '''
 
     if not os.path.isdir(path_result):
         os.mkdir(path_result)
@@ -17,11 +28,15 @@ def prepare(path_file, path_result):
 
 def apply_LPF(time, thrust, dt):
     '''
-    Low Pass Filter(LPF)の適用
+    LPFの適用
+    Args:
+        time    :時間
+        thrust  :推力
+        dt      :時間刻み
     '''
 
     thrust_lpf = butter_lowpass_filter(thrust, 10, 1./ dt)
-    time_lpf = time
+    time_lpf   = time
 
     return time_lpf, thrust_lpf
 
@@ -43,21 +58,24 @@ def apply_thin_out(time, thrust):
     # return time_thin, thrust_thin
     return time_thin, thrust_thin, index_peak
 
-def search_burnout(time, thrust, grad):
+def calc_burnout(time, thrust):
     '''
     燃焼時間の計算
     '''
 
-    index_1, index_2 = serch_decrease_peak(time, thrust, grad)
-    tan1, tan2, nor = calc_tangent_aft_tangent_bisector(time, thrust, grad, index_1, index_2)
+    grad = calc_gradient(time, thrust)                          # 勾配の算出
+    index_1, index_2 = serch_decrease_peak(time, thrust, grad)  # 燃焼時間前後の変曲点の算出
+    tan1, tan2, nor  = calc_tangent_aft_tangent_bisector(time, thrust, grad, index_1, index_2)
+                                                                # 後方接線角二等分線の算出
     time_sta = time[index_1] - 2. * (time[index_2] - time[index_1])
     time_end = time[index_2] + 2. * (time[index_2] - time[index_1])
     x_cross = calc_cross_point_of_backward_bisect(time, thrust, nor, time_sta, time_end)
+                                                                # 後方接戦角二等分線と推力カーブとの交点の算出
     time_array = np.array([time[index_1], time[index_2]])
-    tan2_array = np.array([time_array, tan2(time_array)])
+    tan2_array = np.array([time_array, tan2(time_array)])       # 接戦2の座標
     time_array = np.array([time_sta, time_end])
-    tan1_array = np.array([time_array, tan1(time_array)])
-    nor_array  = np.array([time_array, nor(time_array)])
+    tan1_array = np.array([time_array, tan1(time_array)])       # 接戦1の座標
+    nor_array  = np.array([time_array, nor(time_array)])        # 後方接戦角二等分線と推力カーブの座標
 
     return x_cross, tan1_array, tan2_array, nor_array
 
@@ -80,26 +98,33 @@ def make_summay(path, info_thrust):
 
 def main(path_file, path_result):
 
+    #############################################################################
+    # Pre. Proc.                                                                #
+    #############################################################################
     time_raw, thrust_raw, dt_raw, info_thrust = prepare(path_file, path_result)
     
+    #############################################################################
+    # Filter                                                                    #
+    #############################################################################
     # 1st STEP: Low Pass Filter
     time_lpf, thrust_lpf = apply_LPF(time_raw, thrust_raw, dt_raw)
 
     # 2nd STEP: Data Thin Out (Average + Gaussian Filter)
     time_thin, thrust_thin, index_peak = apply_thin_out(time_lpf, thrust_lpf)
 
-    grad_lpf = calc_gradient(time_lpf, thrust_lpf)
-    grad_thin = calc_gradient(time_thin, thrust_thin)
-
-    time_burnout, tan1, tan2, nor = search_burnout(time_thin, thrust_thin, grad_thin)
-    info_thrust = updata_info_buntout(info_thrust, time_burnout, time_raw, thrust_raw)
+    #############################################################################
+    # Post Proc.                                                                #
+    #############################################################################
+    # Calc. Time Burnout
+    time_burnout, tan1, tan2, nor = calc_burnout(time_thin, thrust_thin)
+    info_thrust = update_info_buntout(info_thrust, time_burnout, time_raw, thrust_raw)
 
     make_summay(path_result, info_thrust)
     
     # Plot
     compare_thrust_curve(path_result, time_raw, thrust_raw, time_lpf, thrust_lpf, time_thin, thrust_thin, index_peak)
     plot_thrust_curve(path_result, time_raw, thrust_raw, time_thin, thrust_thin, info_thrust, tan1, tan2, nor)
-    plot_gradient(path_result, time_thin, grad_thin)
+    # plot_gradient(path_result, time_thin, grad_thin)
 
 if __name__=='__main__':
 

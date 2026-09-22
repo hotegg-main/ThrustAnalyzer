@@ -34,7 +34,7 @@ def calc_thrust_info(time, thrust):
 
     return info_thrust
 
-def updata_info_buntout(info_thrust, time_burn, time, thrust):
+def update_info_buntout(info_thrust, time_burn, time, thrust):
     '''
     推力情報に燃焼時間の情報を更新する
     '''
@@ -228,14 +228,14 @@ def serch_decrease_peak(x, y, grad):
     燃焼時間前後の傾きの変曲点を求める
     '''
 
-    index_sta = np.argmax(y) # 最大推力から解析
-    index_p, index_n = detect_inflection_point(grad[index_sta:])
+    index_sta = np.argmax(y) # 最大推力から解析開始
+    index_p, index_n = detect_inflection_point(grad[index_sta:]) # 変曲点の算出
     index_p += index_sta
     index_n += index_sta
     index_n = np.delete(index_n, 0)
-    index = merge_index(index_p, index_n)
-    index_b = np.argmin(grad[index])
-    index_a = index_b - 1
+    index = merge_index(index_p, index_n)   # 正負の変曲点を統合
+    index_b = np.argmin(grad[index])        # 勾配が最小となる変曲点を算出
+    index_a = index_b - 1                   # 勾配が最小となる変曲点の一つ前の変曲点を指定
 
     return index[index_a], index[index_b]
 
