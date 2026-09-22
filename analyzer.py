@@ -9,17 +9,19 @@ from grapher import plot_log
 
 def calc_thrust_info(time, thrust):
 
-    thrust_max = np.max(thrust)
-    thrust_min = thrust_max * .05 # 審査書基準
-    index_sta = np.argmax(thrust >= thrust_min)
-    time_sta = time[index_sta]
-    index_max = np.argmax(thrust)
-    thrust_max = thrust[index_max]
-    index_end = index_max + np.argmax(thrust[index_max:] <= thrust_min)
-    time_end = time[index_end]
-    time_act = time_end - time_sta
-    total_impulse = integrate.simpson(thrust[:index_end], time[:index_end])
-    thrust_ave = total_impulse / time_act
+    index_max       = np.argmax(thrust)                 # 最大推力時インデックス
+    thrust_max      = thrust[index_max]                 # 最大推力
+    thrust_min      = thrust_max * .05                  # 立ち上がり推力（審査書基準）
+    index_sta       = np.argmax(thrust >= thrust_min)   # 立ち上がりインデックス
+    time_sta        = time[index_sta]                   # 立ち上がり時刻
+    if thrust[-1] <= thrust_min:
+        index_end   = index_max + np.argmax(thrust[index_max:] <= thrust_min)   # 作動終了時インデックス
+    else:
+        index_end   = len(thrust) - 1
+    time_end        = time[index_end]                   # 作動終了時刻
+    time_act        = time_end - time_sta               # 作動時間
+    total_impulse   = integrate.simpson(thrust[index_sta:index_end], time[index_sta:index_end]) # トータルインパルス
+    thrust_ave      = total_impulse / time_act          # 平均推力（作動時間基準）
 
     info_thrust = \
     {
@@ -39,14 +41,12 @@ def update_info_buntout(info_thrust, time_burn, time, thrust):
     推力情報に燃焼時間の情報を更新する
     '''
 
-    info_new = info_thrust
-    time_sta = info_thrust['Act. Start Time']
-    index_burn = np.argmax(time >= time_burn)
-    index_sta  = np.argmax(time >= time_sta)
-    total_impulse = integrate.simpson(thrust[index_sta:index_burn], time[index_sta:index_burn])
-    thrust_ave = total_impulse / (time_burn - time_sta)
+    info_new        = info_thrust
+    index_burn      = np.argmax(time >= time_burn)
+    total_impulse   = integrate.simpson(thrust[:index_burn], time[:index_burn])
+    thrust_ave      = total_impulse / (time_burn)
     info_new['Burn. End, Time']     = time_burn
-    info_new['Burnout Time, Time']  = time_burn - time_sta
+    info_new['Burnout Time, Time']  = time_burn
     info_new['Total Impulse(Burn)'] = total_impulse
     info_new['Ave. Thrust(Burn)']   = thrust_ave
 
@@ -296,11 +296,8 @@ def thin_out_data(index, x, y, index_sta, index_end):
     y_out = np.array(y_out[:index_max_out])
     x_out = np.append(np.append(x[:index_sta], x_out), x[index_max_in:])
     y_out = np.append(np.append(y[:index_sta], y_out), y[index_max_in:])
-    y_out_interp = interpolate.interp1d(x_out, y_out, kind='linear', bounds_error=False, fill_value=(y_out[0], y_out[-1]))
-    # ガウシアンフィルタでダメ押し
-    x_filter = np.arange(x_out[0], x_out[-1] + 0.05, 0.05)
-    y_filter = gaussian_filter(y_out_interp(x_filter), 1.)
-    # y_out = interpolate.interp1d(x_filter, y_filter, kind='linear', bounds_error=False, fill_value=(y_filter[0], y_filter[-1]))(x_out)
+    
+    return x_out, y_out
 
     # plot(x, y, x[index_end], x[index_max_in])
     # plot_compare(x, y, x_out, y_out)
@@ -308,7 +305,7 @@ def thin_out_data(index, x, y, index_sta, index_end):
     # plot_compare_2ax_3series(x, y, x_out, y_out, x[index_sta:index_end], error)
     # plot_compare(x, y, x_filter, y_filter)
 
-    return x_filter, y_filter
+    # return x_filter, y_filter
 
 def compare_data(time_src, thrust_src, time_dst, thrust_dst):
     '''

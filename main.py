@@ -23,8 +23,13 @@ def prepare(path_file, path_result):
 
     time_raw, thrust_raw, dt = load_thrust(path_file)
     info_thrust = calc_thrust_info(time_raw, thrust_raw)
+
+    index_sta = np.argmax(time_raw >= info_thrust['Act. Start Time'])
+    index_end = np.argmax(time_raw >= info_thrust['Act Time, Time'] + info_thrust['Act. Start Time'])
+    time_raw -= time_raw[index_sta]
+    info_thrust['Act. Start Time'] = 0.
     
-    return time_raw, thrust_raw, dt, info_thrust
+    return time_raw[index_sta:index_end], thrust_raw[index_sta:index_end], dt, info_thrust
 
 def apply_LPF(time, thrust, dt):
     '''
@@ -52,11 +57,22 @@ def apply_thin_out(time, thrust):
     index_n, time_n, grad_n = detect_negative_slope(time, grad)
     # Merge Peak Index Info.
     index_peak = merge_index(index_p, index_n)
-    index_thin_sta = index_p[np.argmax(index_p > index_max)]
-    time_thin, thrust_thin = thin_out_data(index_peak, time, thrust, index_thin_sta, index_peak[-1])
+    
+    if len(index_peak) > 10:
+        index_thin_sta = index_p[np.argmax(index_p > index_max)]
+        time_thin, thrust_thin = thin_out_data(index_peak, time, thrust, index_thin_sta, index_peak[-1])
+        return time_thin, thrust_thin, index_peak
+    
+    else:
+        return time, thrust, index_peak
 
-    # return time_thin, thrust_thin
-    return time_thin, thrust_thin, index_peak
+def apply_gaussian(time, thrust):
+
+    y_out_interp = interpolate.interp1d(time, thrust, kind='linear', bounds_error=False, fill_value=(thrust[0], thrust[-1]))
+    time_gauss = np.arange(time[0], time[-1] + 0.05, 0.05)
+    thrust_gauss = gaussian_filter(y_out_interp(time_gauss), 1.)
+
+    return time_gauss, thrust_gauss
 
 def calc_burnout(time, thrust):
     '''
@@ -96,6 +112,14 @@ def make_summay(path, info_thrust):
 
         f.writelines(text)
 
+def output_thrust(path, time_raw, thrust_raw, time_filter, thrust_filter):
+
+    data_raw    = np.c_[time_raw, thrust_raw]
+    data_filter = np.c_[time_filter, thrust_filter]
+    
+    np.savetxt(path + os.sep +'thrust_raw.csv'      , data_raw      , delimiter=',', header='time[s],thrust[N]', comments='')
+    np.savetxt(path + os.sep +'thrust_filter.csv'   , data_filter   , delimiter=',', header='time[s],thrust[N]', comments='')
+
 def main(path_file, path_result):
 
     #############################################################################
@@ -111,19 +135,24 @@ def main(path_file, path_result):
 
     # 2nd STEP: Data Thin Out (Average + Gaussian Filter)
     time_thin, thrust_thin, index_peak = apply_thin_out(time_lpf, thrust_lpf)
+    time_gauss, thrust_gauss = apply_gaussian(time_thin, thrust_thin)
+
+    time_filter   = time_gauss
+    thrust_filter = thrust_gauss
 
     #############################################################################
     # Post Proc.                                                                #
     #############################################################################
     # Calc. Time Burnout
-    time_burnout, tan1, tan2, nor = calc_burnout(time_thin, thrust_thin)
+    time_burnout, tan1, tan2, nor = calc_burnout(time_filter, thrust_filter)
     info_thrust = update_info_buntout(info_thrust, time_burnout, time_raw, thrust_raw)
 
     make_summay(path_result, info_thrust)
+    output_thrust(path_result, time_raw, thrust_raw, time_filter, thrust_filter)
     
     # Plot
-    compare_thrust_curve(path_result, time_raw, thrust_raw, time_lpf, thrust_lpf, time_thin, thrust_thin, index_peak)
-    plot_thrust_curve(path_result, time_raw, thrust_raw, time_thin, thrust_thin, info_thrust, tan1, tan2, nor)
+    compare_thrust_curve(path_result, time_raw, thrust_raw, time_lpf, thrust_lpf, time_filter, thrust_filter, index_peak)
+    plot_thrust_curve(path_result, time_raw, thrust_raw, time_filter, thrust_filter, info_thrust, tan1, tan2, nor)
     # plot_gradient(path_result, time_thin, grad_thin)
 
 if __name__=='__main__':
